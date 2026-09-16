@@ -37,10 +37,10 @@ $(PLIST): Resources/Info.plist
 	mkdir -p $(dir $@)
 	cp $< $@
 
-$(ICON): Tools/make-icon.swift
+$(ICON): Tools/make-icon.swift Resources/AppIcon.png
 	mkdir -p $(dir $@)
 	swiftc -O -swift-version 5 -sdk $(SDK) Tools/make-icon.swift -o $(BUILD_DIR)/make-icon
-	$(BUILD_DIR)/make-icon $@
+	$(BUILD_DIR)/make-icon Resources/AppIcon.png $@
 
 run: build
 	pkill -x $(APP_NAME) || true

@@ -1,32 +1,42 @@
-// Generates the app icon: the "eye" SF Symbol on a blue rounded square.
-// Usage: make-icon <output.icns>
+// Builds the app icon from Resources/AppIcon.png: the photo is scaled to
+// fill a macOS-style rounded square and exported as an .icns.
+// Usage: make-icon <source.png> <output.icns>
 import AppKit
 
-let output = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "AppIcon.icns"
+guard CommandLine.arguments.count == 3 else {
+    FileHandle.standardError.write(Data("usage: make-icon <source.png> <output.icns>\n".utf8))
+    exit(2)
+}
+let sourcePath = CommandLine.arguments[1]
+let output = CommandLine.arguments[2]
+guard let source = NSImage(contentsOfFile: sourcePath) else {
+    FileHandle.standardError.write(Data("cannot read \(sourcePath)\n".utf8))
+    exit(1)
+}
+
 let canvas: CGFloat = 1024
+/// How much the photo is zoomed inside the square, so the eye fills it well.
+let zoom: CGFloat = 1.25
 
 let icon = NSImage(size: NSSize(width: canvas, height: canvas), flipped: false) { rect in
     // Apple's macOS icon grid: the rounded square fills 824 of the 1024 points.
     let square = rect.insetBy(dx: canvas * 0.0977, dy: canvas * 0.0977)
     let radius = square.width * 0.2237
     let shape = NSBezierPath(roundedRect: square, xRadius: radius, yRadius: radius)
-    NSGradient(starting: NSColor(srgbRed: 0.36, green: 0.65, blue: 1.00, alpha: 1),
-               ending: NSColor(srgbRed: 0.07, green: 0.30, blue: 0.85, alpha: 1))?
-        .draw(in: shape, angle: -90)
 
-    let config = NSImage.SymbolConfiguration(pointSize: canvas * 0.40, weight: .medium)
-    guard let symbol = NSImage(systemSymbolName: "eye", accessibilityDescription: nil)?
-        .withSymbolConfiguration(config) else { return false }
+    NSGraphicsContext.saveGraphicsState()
+    shape.addClip()
+    NSColor.white.setFill()
+    square.fill()
 
-    let white = NSImage(size: symbol.size, flipped: false) { symbolRect in
-        symbol.draw(in: symbolRect)
-        NSColor.white.set()
-        symbolRect.fill(using: .sourceAtop)
-        return true
-    }
-    white.draw(in: NSRect(x: (canvas - symbol.size.width) / 2,
-                          y: (canvas - symbol.size.height) / 2,
-                          width: symbol.size.width, height: symbol.size.height))
+    // Scale the photo to cover the square, then zoom in around its centre.
+    let scale = max(square.width / source.size.width, square.height / source.size.height) * zoom
+    let drawn = NSSize(width: source.size.width * scale, height: source.size.height * scale)
+    let origin = NSPoint(x: square.midX - drawn.width / 2, y: square.midY - drawn.height / 2)
+    source.draw(in: NSRect(origin: origin, size: drawn), from: .zero,
+                operation: .sourceOver, fraction: 1, respectFlipped: true,
+                hints: [.interpolation: NSImageInterpolation.high])
+    NSGraphicsContext.restoreGraphicsState()
     return true
 }
 

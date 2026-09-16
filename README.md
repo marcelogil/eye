@@ -61,5 +61,5 @@ Settings › General › Login Items & Extensions.
   - `DesktopIcons.swift` reads and writes the Desktop & Dock setting and observes changes
   - `LaunchAtLogin.swift` `SMAppService` wrapper for the login item
 - `Resources/Info.plist` bundle metadata (`LSUIElement` keeps Eye out of the Dock)
-- `Tools/make-icon.swift` renders the app icon at build time
+- `Resources/AppIcon.png` the icon artwork; `Tools/make-icon.swift` turns it into the .icns at build time
 - `Makefile` build, ad-hoc sign, run, install
